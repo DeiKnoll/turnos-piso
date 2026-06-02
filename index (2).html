@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>Turnos del Piso</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --text: #f0ede6;
+    --text-muted: #888;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; }
+  .logo { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; line-height: 1; letter-spacing: -2px; }
+  .logo span { display: block; font-size: 0.35em; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-family: 'Space Mono', monospace; }
+  .week-nav { display: flex; align-items: center; gap: 1rem; font-family: 'Space Mono', monospace; font-size: 0.85rem; }
+  .week-nav button { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1rem; transition: background 0.15s; }
+  .week-nav button:hover { background: var(--surface2); }
+  #week-label { color: var(--text-muted); min-width: 150px; text-align: center; font-size: 0.75rem; }
+
+  .sync-bar { display: flex; align-items: center; gap: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0; }
+  .sync-dot.ok { background: #c8f55a; }
+  .sync-dot.error { background: #ff4444; }
+  .sync-dot.loading { background: #ffaa00; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .stats-bar { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.6rem 1.2rem; font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--text-muted); }
+  .stat strong { display: block; font-size: 1.6rem; font-weight: 700; font-family: 'Syne', sans-serif; color: var(--text); line-height: 1.1; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; flex: 1; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.875rem; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); border-radius: 16px 16px 0 0; }
+  .card.done { border-color: #2a3d1a; }
+  .card.done::before { background: #c8f55a; }
+  .card.overdue { border-color: #3d1a1a; }
+  .card.overdue::before { background: #ff4444; }
+
+  .card-header { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; color: #0f0f0f; }
+  .person-name { font-size: 1rem; font-weight: 800; letter-spacing: -0.5px; }
+  .task-name { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+  .task-icon { font-size: 2.2rem; text-align: center; padding: 0.25rem 0; }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 0.68rem; font-family: 'Space Mono', monospace; font-weight: 700; text-transform: uppercase; }
+  .badge-done { background: #1e3a0e; color: #c8f55a; }
+  .badge-pending { background: var(--surface2); color: var(--text-muted); }
+  .badge-overdue { background: #3d0e0e; color: #ff6b6b; }
+
+  .check-btn { width: 100%; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Space Mono', monospace; font-size: 0.72rem; cursor: pointer; transition: all 0.15s; text-transform: uppercase; margin-top: auto; }
+  .check-btn:hover { background: var(--surface2); color: var(--text); }
+  .check-btn.marked { background: #1e3a0e; border-color: #4a7a1e; color: #c8f55a; }
+  .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  footer { border-top: 1px solid var(--border); padding-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--text-muted); text-align: center; letter-spacing: 1px; }
+
+  #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--text); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>Piso</span>Turnos</div>
+  <div class="week-nav">
+    <button onclick="changeWeek(-1)">&#8592;</button>
+    <span id="week-label"></span>
+    <button onclick="changeWeek(1)">&#8594;</button>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-dot loading" id="sync-dot"></div>
+  <span id="sync-label">Conectando...</span>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><strong id="stat-done">—</strong>Completados</div>
+  <div class="stat"><strong id="stat-pending">—</strong>Pendientes</div>
+  <div class="stat"><strong id="stat-overdue">—</strong>Atrasados</div>
+</div>
+
+<div class="grid" id="cards-grid">
+  <div style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:0.8rem;padding:2rem;">Cargando datos...</div>
+</div>
+
+<footer>TURNO ROTA CADA SEMANA &nbsp;·&nbsp; SINCRONIZADO EN TIEMPO REAL</footer>
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const SHEET_ID = '1bg_280fHQ3y0RAuzxpmZzYH8miSBZf8IscXbwMdH3jA';
+const SERVICE_ACCOUNT_EMAIL = 'turnos-piso@turnos-piso.iam.gserviceaccount.com';
+const PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC0YZL/SGAUXgnT
+Zh7+ihH6R9W968zFpPrf7xHTz2592uF8g8eg2uTtWnAs56iKEClYAzZIxiT2SyUk
+DZ1snypwm8K7XdNHNOE734Ig8TO9jB+FECJPtThl+4KlwKGTHBV67sNaD/1u/P/q
+7lIA/ux1n+IIQ+uQh6PFrdKTwwgR/xLFlqFwF7mJsfRbc89EInf/y0sdzQjRL7tj
+8P0LSXxYpLPO0j1H7pOvohZFQEqaVm29NI2eHY38zAFxfyYM5Xjll2df0uU+152K
+wjNvTxZTKmRmSD/4BRmyr7eNVMBCLZbCPdSb0JALTrSYMdQ14XlOtvA63+kbUWva
+1Gk7JOlTAgMBAAECggEABrO1ZXzH7RnNXahmsGhq4JS4sVTIh/NoSte0Ht2PKmfu
+htTSnvxjExqQHmsBDRgqoRWFd9C84NXL7HoBBl8nkYWIB7QlvHiPgcz9JcIwfPNu
+3F/MFpASJ1/f686rci7R8X5bjcYYUX5e99ig/V57ZKdrG4mCgB06DYc20rylWR3E
+C3tk9/ASlWF+LTUGYKQ1iCz3iDaQ+IdLPCUZxIuU2yyPj6ksOELBEjfzu2uRNuq1
+WmW/GNb6J6w1eXang+FwL4DOc5sVoyzj5RjReY3scAcTasaTEJc4l+ZSWRU4qjSE
+J34RZvuu7JWoBJl527raBF8Z8ojZ1lmC47DGDQJq+QKBgQDprMfju/4N2qN+TDEu
+1eYwvXY1sRlfRvTijCuYfhlTpIL4+YToPtdYGXLMVY9YzB2J3G0uyaofn/n0Rxas
+fpzc3l5z7zgooq+Sq4cDCxmL59MgTQLYy/uqig50TpNJg3syZFQH0cp7v92eMQNw
+DJuvrY2IpeuIfwHlJ0ofaxE/LQKBgQDFnVWvXtUsh5+Xhgo2s4/XW006umKVw9Cv
+5lluDP5jf7tApRLj+LFS0vMNcgZ02yloOt4h5V6df8qtNpcNG2Ctl3dnrJRMTNSP
+IZm/wRrxWZ/d0cf+3Lx1CJK6bIi34gCtv8Tov9EaDILKrhgo8w3iGihsxYwmqTSW
+PWfU7VwafwKBgQCukaXDPG5Pa0c40zLrCmEtiF0HP4b05s2LcawgABRrqDswRThF
+SK0X4+sfO8wbSmHG3CW1DnNJrPnOxEzsEKqfVoC5m70YnnEL4Zi7bU9odYgEWYQG
+8lzQytKBkTH3eYJP4yPjs5bRXET0KSmoS8MDO2TA8TNEhZ2k0/VMA3CfAQKBgQCH
+HPj97AAi7yPuDQakugbqPxHByrgnH/hqnDufJCE21JmqLHOLDXnoYDUwhzrk4Qgh
+rMY+NL6JP1vLLJ0AqCxk5EAO0Y+fz5QxvM6LrjOGuzm0B4APwMrV1iPEdPrRhyPh
+qFGwtZ35in5Op9P7A5wFcM8c98DImj5LTvbUPeoQbwKBgFIh+fk4DdJeSeZg0juN
+J4FoTavDeWGXrh64aPjHiLKCpKX7OeX6xFuXvDE9pLG/qtHaKbWrAc0NG03KdXFf
+HRFIzafzFrwKwOFPt1s96zOik5k8tZFS+pdWKQ/iRovxu51zP759iW7eYtrDUVhF
+bTw1NjGypVDAcqGx+zLabouY
+-----END PRIVATE KEY-----`;
+
+const PEOPLE = [
+  { name: 'David',  color: '#c8f55a' },
+  { name: 'Jesid',  color: '#ff7b54' },
+  { name: 'Yeinis', color: '#7ecff5' },
+  { name: 'Evan',   color: '#d4a5f5' },
+];
+const TASKS = [
+  { name: 'Baños',            icon: '🚿' },
+  { name: 'Cocina',           icon: '🍳' },
+  { name: 'Salón y pasillos', icon: '🛋️' },
+  { name: 'Sacar la basura',  icon: '🗑️' },
+];
+const BASE_DATE = new Date(2026, 4, 25); // Semana 0 = 25 mayo 2026
+
+// ── STATE ────────────────────────────────────────────────────────────────
+// Calcula automáticamente la semana actual al abrir la app
+function getCurrentWeekOffset() {
+  const now = new Date();
+  const base = new Date(BASE_DATE);
+  // Normalizar ambas fechas a medianoche para evitar errores de horas
+  now.setHours(0, 0, 0, 0);
+  base.setHours(0, 0, 0, 0);
+  const diffMs = now - base;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  return Math.floor(diffDays / 7);
+}
+let weekOffset = getCurrentWeekOffset();
+let sheetData = {};
+let accessToken = null;
+let tokenExpiry = 0;
+
+// ── JWT / AUTH ───────────────────────────────────────────────────────────
+async function getAccessToken() {
+  if (accessToken && Date.now() < tokenExpiry - 60000) return accessToken;
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim = {
+    iss: SERVICE_ACCOUNT_EMAIL,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now
+  };
+  const sHeader = JSON.stringify(header);
+  const sClaim = JSON.stringify(claim);
+  const jwt = KJUR.jws.JWS.sign('RS256', sHeader, sClaim, PRIVATE_KEY);
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await resp.json();
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in * 1000);
+  return accessToken;
+}
+
+// ── SHEETS API ───────────────────────────────────────────────────────────
+async function readSheet() {
+  const token = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:D`;
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await resp.json();
+  const rows = data.values || [];
+  const result = {};
+  for (let i = 1; i < rows.length; i++) {
+    const [semana, persona, , hecho] = rows[i];
+    const key = `${semana}::${persona}`;
+    result[key] = hecho === 'TRUE' || hecho === true || hecho === '1';
+  }
+  return result;
+}
+
+async function writeStatus(persona, semana, tarea, hecho) {
+  const token = await getAccessToken();
+  // Read current rows to find existing entry
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:D`;
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await resp.json();
+  const rows = data.values || [];
+
+  let rowIndex = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(semana) && rows[i][1] === persona) {
+      rowIndex = i + 1; break;
+    }
+  }
+
+  if (rowIndex > 0) {
+    // Update existing row
+    const range = `D${rowIndex}`;
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?valueInputOption=RAW`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[hecho ? 'TRUE' : 'FALSE']] })
+    });
+  } else {
+    // Append new row
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[semana, persona, tarea, hecho ? 'TRUE' : 'FALSE']] })
+    });
+  }
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+function getWeekOffset() { return weekOffset; }
+
+function getWeekLabel(offset) {
+  const base = new Date(BASE_DATE);
+  base.setDate(base.getDate() + offset * 7);
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const end = new Date(base); end.setDate(base.getDate() + 6);
+  const jan1 = new Date(base.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((base - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  const isNow = offset === getCurrentWeekOffset();
+  return `Sem ${weekNum}  ·  ${base.getDate()} ${months[base.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}${isNow ? '  ★' : ''}`;
+}
+
+function getKey(persona, offset) { return `${offset}::${persona}`; }
+function isDone(persona, offset) { return !!sheetData[getKey(persona, offset)]; }
+function isOverdue(persona) { return weekOffset > 0 && !isDone(persona, weekOffset - 1); }
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = `sync-dot ${state}`;
+  lbl.textContent = msg;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('week-label').textContent = getWeekLabel(weekOffset);
+  const grid = document.getElementById('cards-grid');
+  let done = 0, pending = 0, overdue = 0;
+
+  grid.innerHTML = PEOPLE.map((p, i) => {
+    const taskIdx = (i + weekOffset) % TASKS.length;
+    const task = TASKS[taskIdx];
+    const d = isDone(p.name, weekOffset);
+    const ov = !d && isOverdue(p.name);
+    if (d) done++; else if (ov) overdue++; else pending++;
+    const cardClass = d ? 'card done' : ov ? 'card overdue' : 'card';
+    const badgeClass = d ? 'badge badge-done' : ov ? 'badge badge-overdue' : 'badge badge-pending';
+    const badgeText = d ? '✓ Hecho' : ov ? '⚠ Atrasado' : '— Pendiente';
+    return `<div class="${cardClass}" style="--accent:${p.color}">
+      <div class="card-header">
+        <div class="avatar" style="background:${p.color}">${p.name.slice(0,2).toUpperCase()}</div>
+        <div><div class="person-name">${p.name}</div><div class="task-name">${task.name}</div></div>
+      </div>
+      <div class="task-icon">${task.icon}</div>
+      <span class="${badgeClass}">${badgeText}</span>
+      <button class="check-btn ${d ? 'marked' : ''}" id="btn-${i}" onclick="toggle('${p.name}', ${i}, '${task.name}')">
+        ${d ? '↩ Desmarcar' : '✓ Marcar como hecho'}
+      </button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-overdue').textContent = overdue;
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────
+async function toggle(persona, idx, tarea) {
+  const btn = document.getElementById(`btn-${idx}`);
+  btn.disabled = true;
+  const key = getKey(persona, weekOffset);
+  const newVal = !sheetData[key];
+  sheetData[key] = newVal;
+  render();
+  setSyncStatus('loading', 'Guardando...');
+  try {
+    await writeStatus(persona, weekOffset, tarea, newVal);
+    setSyncStatus('ok', `Guardado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
+    showToast(newVal ? `✓ ${persona} marcado como hecho` : `↩ ${persona} desmarcado`);
+  } catch(e) {
+    sheetData[key] = !newVal;
+    setSyncStatus('error', 'Error al guardar — reintentando...');
+    render();
+    setTimeout(loadData, 3000);
+  }
+}
+
+async function loadData() {
+  setSyncStatus('loading', 'Sincronizando...');
+  try {
+    sheetData = await readSheet();
+    setSyncStatus('ok', `Sincronizado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
+    render();
+  } catch(e) {
+    setSyncStatus('error', 'Sin conexión — usando caché local');
+    render();
+  }
+}
+
+async function changeWeek(dir) {
+  weekOffset += dir;
+  render();
+  await loadData();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+loadData();
+setInterval(loadData, 60000); // Auto-refresh every minute
+</script>
+</body>
+</html>
