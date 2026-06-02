@@ -146,10 +146,21 @@ const TASKS = [
   { name: 'Salón y pasillos', icon: '🛋️' },
   { name: 'Sacar la basura',  icon: '🗑️' },
 ];
-const BASE_DATE = new Date(2026, 4, 25);
+const BASE_DATE = new Date(2026, 4, 25); // Semana 0 = 25 mayo 2026
 
 // ── STATE ────────────────────────────────────────────────────────────────
-let weekOffset = 0;
+// Calcula automáticamente la semana actual al abrir la app
+function getCurrentWeekOffset() {
+  const now = new Date();
+  const base = new Date(BASE_DATE);
+  // Normalizar ambas fechas a medianoche para evitar errores de horas
+  now.setHours(0, 0, 0, 0);
+  base.setHours(0, 0, 0, 0);
+  const diffMs = now - base;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  return Math.floor(diffDays / 7);
+}
+let weekOffset = getCurrentWeekOffset();
 let sheetData = {};
 let accessToken = null;
 let tokenExpiry = 0;
@@ -237,7 +248,10 @@ function getWeekLabel(offset) {
   base.setDate(base.getDate() + offset * 7);
   const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const end = new Date(base); end.setDate(base.getDate() + 6);
-  return `${base.getDate()} ${months[base.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}`;
+  const jan1 = new Date(base.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((base - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  const isNow = offset === getCurrentWeekOffset();
+  return `Sem ${weekNum}  ·  ${base.getDate()} ${months[base.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}${isNow ? '  ★' : ''}`;
 }
 
 function getKey(persona, offset) { return `${offset}::${persona}`; }
