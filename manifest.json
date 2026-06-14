@@ -2,7 +2,7 @@
   "name": "Turnos del Piso",
   "short_name": "Turnos",
   "description": "Panel de turnos de limpieza del piso",
-  "start_url": "./turnos_piso.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f0f0f",
   "theme_color": "#0f0f0f",
