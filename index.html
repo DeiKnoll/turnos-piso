@@ -87,6 +87,7 @@
     <button onclick="changeWeek(-1)">&#8592;</button>
     <span id="week-label"></span>
     <button onclick="changeWeek(1)">&#8594;</button>
+<button onclick="goToToday()" id="today-btn" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:0 14px;height:36px;border-radius:18px;cursor:pointer;font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;transition:background 0.15s;">Hoy</button>
   </div>
 </header>
 
@@ -289,6 +290,8 @@ function showToast(msg) {
 // ── RENDER ───────────────────────────────────────────────────────────────
 function render() {
   document.getElementById('week-label').textContent = getWeekLabel(weekOffset);
+const todayBtn = document.getElementById('today-btn');
+if (todayBtn) todayBtn.style.display = weekOffset === getCurrentWeekOffset() ? 'none' : 'inline-block';
   const grid = document.getElementById('cards-grid');
   let done = 0, pending = 0, overdue = 0;
 
@@ -352,6 +355,11 @@ async function loadData() {
   }
 }
 
+function goToToday() {
+  weekOffset = getCurrentWeekOffset();
+  render();
+  loadData();
+}  
 async function changeWeek(dir) {
   weekOffset += dir;
   render();
