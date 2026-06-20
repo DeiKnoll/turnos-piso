@@ -375,7 +375,12 @@ async function changeWeek(dir) {
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 loadData();
-setInterval(() => { if (!isSaving) loadData(); }, 60000); // Auto-refresh every minute
+// Refrescar solo cuando la pestaña vuelve a estar activa
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !isSaving) loadData();
+});
+// Y cada 5 minutos como máximo
+setInterval(() => { if (!isSaving && !document.hidden) loadData(); }, 300000); // Auto-refresh every minute
 </script>
 </body>
 </html>
