@@ -338,6 +338,7 @@ async function toggle(persona, idx, tarea) {
   try {
     await writeStatus(persona, weekOffset, tarea, newVal);
     setSyncStatus('ok', `Guardado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
+  lastSaved[key] = newVal;
     showToast(newVal ? `✓ ${persona} marcado como hecho` : `↩ ${persona} desmarcado`);
   } catch(e) {
     sheetData[key] = !newVal;
