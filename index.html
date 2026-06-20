@@ -180,7 +180,7 @@ let sheetData = {};
 let accessToken = null;
 let tokenExpiry = 0;
 let isSaving = false;
-
+let lastSaved = {};
 // ── JWT / AUTH ───────────────────────────────────────────────────────────
 async function getAccessToken() {
   if (accessToken && Date.now() < tokenExpiry - 60000) return accessToken;
@@ -209,6 +209,7 @@ async function getAccessToken() {
 
 // ── SHEETS API ───────────────────────────────────────────────────────────
 async function readSheet() {
+  async function readSheet() {
   const token = await getAccessToken();
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:D`;
   const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -220,7 +221,8 @@ async function readSheet() {
     const key = `${semana}::${persona}`;
     result[key] = hecho === 'TRUE' || hecho === true || hecho === '1';
   }
-  return result;
+  // Fusionar con lastSaved para no perder cambios locales recientes
+  return Object.assign({}, result, lastSaved);
 }
 
 async function writeStatus(persona, semana, tarea, hecho) {
