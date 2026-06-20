@@ -353,12 +353,14 @@ async function toggle(persona, idx, tarea) {
 async function loadData() {
   setSyncStatus('loading', 'Sincronizando...');
   try {
-    sheetData = await readSheet();
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+    sheetData = await Promise.race([readSheet(), timeout]);
     setSyncStatus('ok', `Sincronizado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
     render();
   } catch(e) {
-    setSyncStatus('error', 'Sin conexión — usando caché local');
-    render();
+    console.error('loadData error:', e);
+    setSyncStatus('error', 'Sin conexión');
+    render(); // Renderiza aunque sea sin datos de Sheets
   }
 }
 
