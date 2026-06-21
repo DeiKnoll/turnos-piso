@@ -5,73 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f0f0f">
 <title>Turnos del Piso</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#222; --border:#2e2e2e; --text:#f0ede6; --text-muted:#888; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem; }
-
-  header { display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; border-bottom:1px solid var(--border); padding-bottom:1.25rem; }
-  .logo { font-size:clamp(1.8rem,5vw,3rem); font-weight:800; line-height:1; letter-spacing:-2px; }
-  .logo span { display:block; font-size:0.35em; font-weight:400; letter-spacing:4px; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; font-family:'Space Mono',monospace; }
-  .logo-address { display:block; font-size:0.22em; font-weight:400; letter-spacing:2px; color:var(--text-muted); margin-top:3px; font-family:'Space Mono',monospace; opacity:0.55; }
-
-  .week-nav { display:flex; align-items:center; gap:0.6rem; font-family:'Space Mono',monospace; }
-  .week-nav button { background:var(--surface); border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1rem; transition:background 0.15s; }
-  .week-nav button:hover { background:var(--surface2); }
-  #today-btn { width:auto !important; border-radius:18px !important; padding:0 14px; font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; }
-  #week-label { color:var(--text-muted); min-width:150px; text-align:center; font-size:0.72rem; }
-
-  .sync-bar { display:flex; align-items:center; gap:8px; font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--text-muted); }
-  .sync-dot { width:8px; height:8px; border-radius:50%; background:#888; flex-shrink:0; }
-  .sync-dot.ok { background:#c8f55a; }
-  .sync-dot.error { background:#ff4444; }
-  .sync-dot.loading { background:#ffaa00; animation:pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .stats-bar { display:flex; gap:1rem; flex-wrap:wrap; }
-  .stat { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:0.6rem 1.2rem; font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--text-muted); }
-  .stat strong { display:block; font-size:1.6rem; font-weight:700; font-family:'Syne',sans-serif; color:var(--text); line-height:1.1; }
-
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; flex:1; }
-
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.25rem; display:flex; flex-direction:column; gap:0.875rem; position:relative; overflow:hidden; transition:border-color 0.2s, background 0.2s; }
-  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent); border-radius:16px 16px 0 0; }
-  .card.done { border-color:#27ae27; background:#0d1f0d; }
-  .card.done::before { background:#27ae27; }
-  .card.overdue { border-color:#3d1a1a; }
-  .card.overdue::before { background:#ff4444; }
-
-  .card-header { display:flex; align-items:center; gap:10px; }
-  .avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.9rem; flex-shrink:0; color:#0f0f0f; }
-  .person-name { font-size:1rem; font-weight:800; letter-spacing:-0.5px; }
-  .task-name { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:2px; text-transform:uppercase; letter-spacing:1px; }
-
-  .emoji-section { border-radius:12px; display:flex; align-items:center; justify-content:center; padding:0.75rem 0; font-size:4rem; }
-  .emoji-section.done-bg { background:#27ae27; }
-  .emoji-section.pending-bg { background:var(--surface2); }
-
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:0.68rem; font-family:'Space Mono',monospace; font-weight:700; text-transform:uppercase; }
-  .badge-done { background:#1e3a0e; color:#c8f55a; }
-  .badge-pending { background:var(--surface2); color:var(--text-muted); }
-  .badge-overdue { background:#3d0e0e; color:#ff6b6b; }
-
-  .check-btn { width:100%; padding:9px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-family:'Space Mono',monospace; font-size:0.72rem; cursor:pointer; transition:all 0.15s; text-transform:uppercase; margin-top:auto; }
-  .check-btn:hover { background:var(--surface2); color:var(--text); }
-  .check-btn.marked { background:#27ae27; border-color:#27ae27; color:#fff; font-weight:700; }
-  .check-btn:disabled { opacity:0.5; cursor:not-allowed; }
-
-  footer { border-top:1px solid var(--border); padding-top:1rem; font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-align:center; letter-spacing:1px; }
-  #toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 20px; font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--text); opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; white-space:nowrap; }
-  #toast.show { opacity:1; }
+  :root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--border:#2e2e2e;--text:#f0ede6;--text-muted:#888}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+  header{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;border-bottom:1px solid var(--border);padding-bottom:1.25rem}
+  .logo{font-size:clamp(1.8rem,5vw,3rem);font-weight:800;line-height:1;letter-spacing:-2px}
+  .logo span{display:block;font-size:0.35em;font-weight:400;letter-spacing:4px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;font-family:'Space Mono',monospace}
+  .logo-address{display:block;font-size:0.22em;font-weight:400;letter-spacing:2px;color:var(--text-muted);margin-top:3px;font-family:'Space Mono',monospace;opacity:0.55}
+  .week-nav{display:flex;align-items:center;gap:0.6rem;font-family:'Space Mono',monospace}
+  .week-nav button{background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;transition:background 0.15s}
+  #today-btn{width:auto!important;border-radius:18px!important;padding:0 14px;font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase}
+  #week-label{color:var(--text-muted);min-width:150px;text-align:center;font-size:0.72rem}
+  .sync-bar{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--text-muted)}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0}
+  .sync-dot.ok{background:#c8f55a}
+  .sync-dot.error{background:#ff4444}
+  .sync-dot.loading{background:#ffaa00;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .stats-bar{display:flex;gap:1rem;flex-wrap:wrap}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.6rem 1.2rem;font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--text-muted)}
+  .stat strong{display:block;font-size:1.6rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);line-height:1.1}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;flex:1}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;display:flex;flex-direction:column;gap:0.875rem;position:relative;overflow:hidden;transition:border-color 0.2s,background 0.2s}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);border-radius:16px 16px 0 0}
+  .card.done{border-color:#27ae27;background:#0d1f0d}
+  .card.done::before{background:#27ae27}
+  .card.overdue{border-color:#3d1a1a}
+  .card.overdue::before{background:#ff4444}
+  .card-header{display:flex;align-items:center;gap:10px}
+  .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;flex-shrink:0;color:#0f0f0f}
+  .person-name{font-size:1rem;font-weight:800;letter-spacing:-0.5px}
+  .task-name{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:1px}
+  .emoji-section{border-radius:12px;display:flex;align-items:center;justify-content:center;padding:0.75rem 0;font-size:4rem}
+  .emoji-section.done-bg{background:#27ae27}
+  .emoji-section.pending-bg{background:var(--surface2)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:0.68rem;font-family:'Space Mono',monospace;font-weight:700;text-transform:uppercase}
+  .badge-done{background:#1e3a0e;color:#c8f55a}
+  .badge-pending{background:var(--surface2);color:var(--text-muted)}
+  .badge-overdue{background:#3d0e0e;color:#ff6b6b}
+  .check-btn{width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:0.72rem;cursor:pointer;transition:all 0.15s;text-transform:uppercase;margin-top:auto}
+  .check-btn:hover{background:var(--surface2);color:var(--text)}
+  .check-btn.marked{background:#27ae27;border-color:#27ae27;color:#fff;font-weight:700}
+  .check-btn:disabled{opacity:0.5;cursor:not-allowed}
+  footer{border-top:1px solid var(--border);padding-top:1rem;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-muted);text-align:center;letter-spacing:1px}
+  #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--text);opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+  #toast.show{opacity:1}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <span>Tareas de Limpieza</span>
@@ -85,202 +71,191 @@
     <button id="today-btn" onclick="goToToday()" style="display:none">HOY</button>
   </div>
 </header>
-
 <div class="sync-bar">
   <div class="sync-dot loading" id="sync-dot"></div>
   <span id="sync-label">Conectando...</span>
 </div>
-
 <div class="stats-bar">
-  <div class="stat"><strong id="stat-done">—</strong>Completados</div>
-  <div class="stat"><strong id="stat-pending">—</strong>Pendientes</div>
-  <div class="stat"><strong id="stat-overdue">—</strong>Atrasados</div>
+  <div class="stat"><strong id="stat-done">-</strong>Completados</div>
+  <div class="stat"><strong id="stat-pending">-</strong>Pendientes</div>
+  <div class="stat"><strong id="stat-overdue">-</strong>Atrasados</div>
 </div>
-
-<div class="grid" id="cards-grid">
-  <div style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:0.8rem;padding:2rem;">Cargando datos...</div>
-</div>
-
+<div class="grid" id="cards-grid"></div>
 <footer>TURNO ROTA CADA SEMANA &nbsp;·&nbsp; SINCRONIZADO EN TIEMPO REAL</footer>
 <div id="toast"></div>
 
 <script>
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyX9VRb2M3Zxh0gawpQYnJTpmjGNzGWOBHJbO58iH6U0fs9v8BLx_6YTnWU7Z89uknSkA/exec';
+const GAS = 'https://script.google.com/macros/s/AKfycbyX9VRb2M3Zxh0gawpQYnJTpmjGNzGWOBHJbO58iH6U0fs9v8BLx_6YTnWU7Z89uknSkA/exec';
 
 const PEOPLE = [
-  { name:'David',  color:'#c8f55a' },
-  { name:'Jesid',  color:'#ff7b54' },
-  { name:'Yeinis', color:'#7ecff5' },
-  { name:'Evan',   color:'#d4a5f5' },
+  {name:'David', color:'#c8f55a'},
+  {name:'Jesid', color:'#ff7b54'},
+  {name:'Yeinis',color:'#7ecff5'},
+  {name:'Evan',  color:'#d4a5f5'},
 ];
 const TASKS = [
-  { name:'Baños',            icon:'🚿' },
-  { name:'Cocina',           icon:'🍳' },
-  { name:'Salón y pasillos', icon:'🛋️' },
-  { name:'Sacar la basura',  icon:'🗑️' },
+  {name:'Baños',           icon:'🚿'},
+  {name:'Cocina',          icon:'🍳'},
+  {name:'Salón y pasillos',icon:'🛋️'},
+  {name:'Sacar la basura', icon:'🗑️'},
 ];
-const BASE_DATE = new Date(2026, 4, 25);
+const BASE = new Date(2026,4,25);
 
-// ── STATE ────────────────────────────────────────────────────────────────
-function getCurrentWeekOffset() {
-  const now = new Date(); now.setHours(0,0,0,0);
-  const base = new Date(BASE_DATE); base.setHours(0,0,0,0);
-  return Math.floor((now - base) / (7*24*60*60*1000));
+function currentOffset(){
+  const n=new Date();n.setHours(0,0,0,0);
+  const b=new Date(BASE);b.setHours(0,0,0,0);
+  return Math.floor((n-b)/(7*864e5));
 }
 
-let weekOffset = getCurrentWeekOffset();
-let sheetData = {};
-let isSaving = false;
-let lastSaved = {};
+let weekOffset=currentOffset();
+let data={};
+let saving=false;
+let localOverride={};
 
-// ── API ──────────────────────────────────────────────────────────────────
-function jsonp(url) {
-  return new Promise((resolve, reject) => {
-    const cb = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    const script = document.createElement('script');
-    window[cb] = (data) => { resolve(data); delete window[cb]; script.remove(); };
-    script.onerror = () => reject('script error');
-    script.src = url + '&callback=' + cb;
-    document.head.appendChild(script);
-    setTimeout(() => { delete window[cb]; script.remove(); reject('timeout'); }, 10000);
+// ── JSONP ────────────────────────────────────────────────────────────────
+function callGAS(params){
+  return new Promise((resolve,reject)=>{
+    const cb='_cb'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script');
+    const timer=setTimeout(()=>{
+      delete window[cb];s.remove();
+      reject(new Error('timeout'));
+    },12000);
+    window[cb]=(d)=>{
+      clearTimeout(timer);
+      delete window[cb];s.remove();
+      resolve(d);
+    };
+    const qs=Object.entries({...params,callback:cb})
+      .map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+    s.src=GAS+'?'+qs;
+    s.onerror=()=>{clearTimeout(timer);delete window[cb];s.remove();reject(new Error('script error'));};
+    document.head.appendChild(s);
   });
 }
 
-async function readSheet() {
-  const data = await jsonp(`${APPS_SCRIPT_URL}?action=read&t=${Date.now()}`);
-  return Object.assign({}, data, lastSaved);
+async function readData(){
+  const d=await callGAS({action:'read',t:Date.now()});
+  return Object.assign({},d,localOverride);
 }
 
-async function writeSheet(persona, semana, tarea, hecho) {
-  return jsonp(`${APPS_SCRIPT_URL}?action=write&persona=${encodeURIComponent(persona)}&semana=${semana}&tarea=${encodeURIComponent(tarea)}&hecho=${hecho}&t=${Date.now()}`);
+async function writeData(persona,semana,tarea,hecho){
+  return callGAS({action:'write',persona,semana,tarea,hecho:String(hecho),t:Date.now()});
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────
-function getWeekLabel(offset) {
-  const base = new Date(BASE_DATE);
-  base.setDate(base.getDate() + offset * 7);
-  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  const end = new Date(base); end.setDate(base.getDate() + 6);
-  const jan1 = new Date(base.getFullYear(), 0, 1);
-  const weekNum = Math.ceil(((base - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-  const isNow = offset === getCurrentWeekOffset();
-  return `Sem ${weekNum}  ·  ${base.getDate()} ${months[base.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}${isNow ? '  ★' : ''}`;
+function weekLabel(offset){
+  const b=new Date(BASE);b.setDate(b.getDate()+offset*7);
+  const e=new Date(b);e.setDate(b.getDate()+6);
+  const m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const j=new Date(b.getFullYear(),0,1);
+  const wn=Math.ceil(((b-j)/864e5+j.getDay()+1)/7);
+  const now=offset===currentOffset();
+  return `Sem ${wn}  ·  ${b.getDate()} ${m[b.getMonth()]} – ${e.getDate()} ${m[e.getMonth()]}${now?' ★':''}`;
 }
 
-function getKey(persona, offset) { return `${offset}::${persona}`; }
-function isDone(persona, offset) { return !!sheetData[getKey(persona, offset)]; }
-function isOverdue(persona) { return weekOffset > 0 && !isDone(persona, weekOffset - 1); }
+function key(persona,offset){return offset+'::'+persona;}
+function done(persona,offset){return !!data[key(persona,offset)];}
+function overdue(persona){return weekOffset>0&&!done(persona,weekOffset-1);}
 
-function setSyncStatus(state, msg) {
-  document.getElementById('sync-dot').className = `sync-dot ${state}`;
-  document.getElementById('sync-label').textContent = msg;
+function syncStatus(state,msg){
+  document.getElementById('sync-dot').className='sync-dot '+state;
+  document.getElementById('sync-label').textContent=msg;
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────
-function render() {
-  document.getElementById('week-label').textContent = getWeekLabel(weekOffset);
-  const todayBtn = document.getElementById('today-btn');
-  todayBtn.style.display = weekOffset === getCurrentWeekOffset() ? 'none' : 'inline-block';
-
-  const grid = document.getElementById('cards-grid');
-  let done = 0, pending = 0, overdue = 0;
-
-  grid.innerHTML = PEOPLE.map((p, i) => {
-    const taskIdx = (i + weekOffset) % TASKS.length;
-    const task = TASKS[taskIdx];
-    const d = isDone(p.name, weekOffset);
-    const ov = !d && isOverdue(p.name);
-    if (d) done++; else if (ov) overdue++; else pending++;
-
-    const cardClass = d ? 'card done' : ov ? 'card overdue' : 'card';
-    const badgeClass = d ? 'badge badge-done' : ov ? 'badge badge-overdue' : 'badge badge-pending';
-    const badgeText = d ? '✓ Hecho' : ov ? '⚠ Atrasado' : '— Pendiente';
-    const emoji = d
-      ? `<div class="emoji-section done-bg">👍😄</div>`
-      : `<div class="emoji-section pending-bg">😴</div>`;
-
-    return `<div class="${cardClass}" style="--accent:${p.color}">
+function render(){
+  document.getElementById('week-label').textContent=weekLabel(weekOffset);
+  document.getElementById('today-btn').style.display=weekOffset===currentOffset()?'none':'inline-block';
+  let dc=0,pc=0,oc=0;
+  document.getElementById('cards-grid').innerHTML=PEOPLE.map((p,i)=>{
+    const t=TASKS[(i+weekOffset)%TASKS.length];
+    const d=done(p.name,weekOffset);
+    const ov=!d&&overdue(p.name);
+    if(d)dc++;else if(ov)oc++;else pc++;
+    const cc=d?'card done':ov?'card overdue':'card';
+    const bc=d?'badge badge-done':ov?'badge badge-overdue':'badge badge-pending';
+    const bt=d?'✓ Hecho':ov?'⚠ Atrasado':'— Pendiente';
+    const em=d?'<div class="emoji-section done-bg">👍😄</div>':'<div class="emoji-section pending-bg">😴</div>';
+    return `<div class="${cc}" style="--accent:${p.color}">
       <div class="card-header">
         <div class="avatar" style="background:${p.color}">${p.name.slice(0,2).toUpperCase()}</div>
-        <div><div class="person-name">${p.name}</div><div class="task-name">${task.icon} ${task.name}</div></div>
+        <div><div class="person-name">${p.name}</div><div class="task-name">${t.icon} ${t.name}</div></div>
       </div>
-      ${emoji}
-      <span class="${badgeClass}">${badgeText}</span>
-      <button class="check-btn ${d ? 'marked' : ''}" id="btn-${i}" onclick="toggle('${p.name}', ${i}, '${task.name}')">
-        ${d ? '↩ Desmarcar' : '✓ Marcar como hecho'}
+      ${em}
+      <span class="${bc}">${bt}</span>
+      <button class="check-btn${d?' marked':''}" id="btn${i}" onclick="toggle('${p.name}',${i},'${t.name}')">
+        ${d?'↩ Desmarcar':'✓ Marcar como hecho'}
       </button>
     </div>`;
   }).join('');
-
-  document.getElementById('stat-done').textContent = done;
-  document.getElementById('stat-pending').textContent = pending;
-  document.getElementById('stat-overdue').textContent = overdue;
+  document.getElementById('stat-done').textContent=dc;
+  document.getElementById('stat-pending').textContent=pc;
+  document.getElementById('stat-overdue').textContent=oc;
 }
 
 // ── ACTIONS ──────────────────────────────────────────────────────────────
-async function toggle(persona, idx, tarea) {
-  const btn = document.getElementById(`btn-${idx}`);
-  btn.disabled = true;
-  isSaving = true;
-  const key = getKey(persona, weekOffset);
-  const newVal = !sheetData[key];
-  sheetData[key] = newVal;
-  lastSaved[key] = newVal;
+async function toggle(persona,idx,tarea){
+  if(saving)return;
+  const btn=document.getElementById('btn'+idx);
+  btn.disabled=true;
+  saving=true;
+  const k=key(persona,weekOffset);
+  const newVal=!data[k];
+  data[k]=newVal;
+  localOverride[k]=newVal;
   render();
-  setSyncStatus('loading', 'Guardando...');
-  try {
-    await writeSheet(persona, weekOffset, tarea, newVal);
-    setSyncStatus('ok', `Guardado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
-    showToast(newVal ? `✓ ${persona} marcado como hecho` : `↩ ${persona} desmarcado`);
-  } catch(e) {
-    sheetData[key] = !newVal;
-    lastSaved[key] = !newVal;
-    setSyncStatus('error', 'Error al guardar');
-    render();
-  } finally {
-    isSaving = false;
+  syncStatus('loading','Guardando...');
+  try{
+    await writeData(persona,weekOffset,tarea,newVal);
+    syncStatus('ok','Guardado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
+    toast(newVal?`✓ ${persona} marcado como hecho`:`↩ ${persona} desmarcado`);
+  }catch(e){
+    // Mantener el estado local aunque falle el servidor
+    syncStatus('error','Error de red — guardado localmente');
+    toast('⚠ Sin conexión, reintentando...');
+    // Reintentar en 5 segundos
+    setTimeout(()=>writeData(persona,weekOffset,tarea,newVal).catch(()=>{}),5000);
+  }finally{
+    saving=false;
+    btn.disabled=false;
   }
 }
 
-async function loadData() {
-  if (isSaving) return;
-  setSyncStatus('loading', 'Sincronizando...');
-  try {
-    const timeout = new Promise((_, rej) => setTimeout(() => rej('timeout'), 10000));
-    sheetData = await Promise.race([readSheet(), timeout]);
-    setSyncStatus('ok', `Sincronizado · ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}`);
+async function load(){
+  if(saving)return;
+  syncStatus('loading','Sincronizando...');
+  try{
+    const fresh=await Promise.race([
+      readData(),
+      new Promise((_,r)=>setTimeout(()=>r('timeout'),10000))
+    ]);
+    // Solo actualizar claves que no estén en localOverride
+    Object.keys(fresh).forEach(k=>{
+      if(!(k in localOverride))data[k]=fresh[k];
+    });
+    syncStatus('ok','Sincronizado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
     render();
-  } catch(e) {
-    setSyncStatus('error', 'Sin conexión');
+  }catch(e){
+    syncStatus('error','Sin conexión');
     render();
   }
 }
 
-function goToToday() {
-  weekOffset = getCurrentWeekOffset();
-  render();
-  loadData();
-}
-
-async function changeWeek(dir) {
-  weekOffset += dir;
-  render();
-  await loadData();
-}
+function goToToday(){weekOffset=currentOffset();render();load();}
+async function changeWeek(d){weekOffset+=d;render();await load();}
 
 // ── INIT ─────────────────────────────────────────────────────────────────
-loadData();
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && !isSaving) loadData();
-});
-setInterval(() => { if (!isSaving && !document.hidden) loadData(); }, 300000);
+render();
+load();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!saving)load();});
+setInterval(()=>{if(!saving&&!document.hidden)load();},300000);
 </script>
 </body>
 </html>
