@@ -134,18 +134,25 @@ let isSaving = false;
 let lastSaved = {};
 
 // ── API ──────────────────────────────────────────────────────────────────
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    window[cb] = (data) => { resolve(data); delete window[cb]; script.remove(); };
+    script.onerror = () => reject('script error');
+    script.src = url + '&callback=' + cb;
+    document.head.appendChild(script);
+    setTimeout(() => { delete window[cb]; script.remove(); reject('timeout'); }, 10000);
+  });
+}
+
 async function readSheet() {
-  const url = `${APPS_SCRIPT_URL}?action=read&t=${Date.now()}`;
-  const resp = await fetch(url);
-  const data = await resp.json();
-  // Fusionar con lastSaved para no perder cambios recientes
+  const data = await jsonp(`${APPS_SCRIPT_URL}?action=read&t=${Date.now()}`);
   return Object.assign({}, data, lastSaved);
 }
 
 async function writeSheet(persona, semana, tarea, hecho) {
-  const url = `${APPS_SCRIPT_URL}?action=write&persona=${encodeURIComponent(persona)}&semana=${semana}&tarea=${encodeURIComponent(tarea)}&hecho=${hecho}`;
-  const resp = await fetch(url);
-  return resp.json();
+  return jsonp(`${APPS_SCRIPT_URL}?action=write&persona=${encodeURIComponent(persona)}&semana=${semana}&tarea=${encodeURIComponent(tarea)}&hecho=${hecho}&t=${Date.now()}`);
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────
